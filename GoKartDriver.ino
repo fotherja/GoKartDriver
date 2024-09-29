@@ -20,6 +20,9 @@
 *   The ADC Throttle values range between: 185-680
 *   The Current sensor reports about 512. +ve values represent a forward torque at 10/Amp. Hence an ADC reading of 612 equates to +10A of motor current
 *
+*   Change Log:
+*    - 29/6/24 - 12 to 24V bttery so halved PI parameters, adjusted torque reduction with speed thresholds
+*
 */
 
 #define         Fwd_Rev_Pin   5
@@ -38,7 +41,7 @@
 #include "Average.h"
 
 double I_Setpoint = 512, I_Measured, D_Output;
-double Kp = 4.5, Ki = 50, Kd = 0;
+double Kp = 2.25, Ki = 25, Kd = 0;
 
 Average         FilterI(0);                                                 
 Average         FilterThrottle(0);
@@ -109,14 +112,14 @@ void loop() {
 
     I_Setpoint = FilterThrottle.FF_Current - 225.0;                             // Translate the throttle values 
 
-    if(duty > 1500) {                                                           // At higher speeds reduce the allowed torque to 20A (We have a 25A battery fuse)
-      I_Setpoint = constrain(I_Setpoint, -30.0, 200.0);
+    if(duty > 1250) {                                                           // At higher speeds reduce the allowed torque to 25A
+      I_Setpoint = constrain(I_Setpoint, -30.0, 250.0);
     }
-    else if(duty > 1000) {
+    else if(duty > 750) {
       I_Setpoint = constrain(I_Setpoint, -30.0, 300.0);                         // Allow 30A at medium speeds (battery current will be <25A due to DC/DC conversion)
     }    
     else {
-      I_Setpoint = constrain(I_Setpoint, -30.0, 360.0);                         // Allow 36A at low speeds
+      I_Setpoint = constrain(I_Setpoint, -30.0, 350.0);                         // Allow 35A at low speeds
     } 
 
     if(Reverse_Flag == 0) {
